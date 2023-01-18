@@ -1,0 +1,84 @@
+CREATE DATABASE ROAD_SAFETY_PROJECT;
+
+USE DATABASE ROAD_SAFETY_PROJECT;
+
+SELECT * FROM "ROAD_SAFETY_PROJECT"."PUBLIC"."ACCIDENTS_2015";
+
+SELECT * FROM "ROAD_SAFETY_PROJECT"."PUBLIC"."VEHICLES_2015";
+
+SELECT * FROM "ROAD_SAFETY_PROJECT"."PUBLIC"."VEHICLE_TYPES";
+
+
+
+--*UK ROAD SAFTETY 1ST QUESTION - SOLUTION*------------------------------------
+
+--way1:-
+SELECT MEDIAN(ACCIDENT_SEVERITY) FROM ACCIDENTS_2015;
+
+--OR
+--way2:-
+with med as( 
+select a.ACCIDENT_SEVERITY,v.Vehicle_type,vt.label,ROW_NUMBER() OVER(PARTITION BY LABEL ORDER BY ACCIDENT_SEVERITY) AS RN,
+  COUNT(1)OVER(PARTITION BY LABEL) AS CT
+from "ACCIDENTS_2015" a
+inner join "VEHICLES_2015" v on a.ACCIDENT_INDEX=v.ACCIDENT_INDEX
+inner join "VEHICLE_TYPES" vt on v.Vehicle_type=vt.code
+where label like '%otorcycle%')
+
+select label,ROUND(AVG(ACCIDENT_SEVERITY),0) as median_value
+FROM MED
+WHERE RN = CEIL(CT/2) OR RN IN (CT/2,(CT/2)+1)
+GROUP BY 1;
+
+--**UK ROAD SAFTETY 2ND QUESTION - SOLUTION***----------------------------
+----Accident Severity and Total Accidents per Vehicle Type --------------------------------------
+
+SELECT COUNT(ACCIDENT_INDEX) AS TOTAL_ACCIDENTS, ACCIDENT_SEVERITY,Vehicle_Type, LABEL FROM( 
+    SELECT AX.ACCIDENT_INDEX, AX.ACCIDENT_SEVERITY,VEH.Vehicle_Type, VT.LABEL
+    FROM ACCIDENTS_2015 AX
+    JOIN VEHICLES_2015 VEH ON AX.accident_index = VEH.accident_index
+    JOIN VEHICLE_TYPES VT ON VEH.vehicle_type = VT.CODE)
+    GROUP BY 2 ,3,4
+    ORDER BY 4,2;
+
+-------------------------------------------------------------
+-- CHANGED THE VALUE WHEREVER WE HAVE CODE = -1 IN OUR VEHICLE_TYPES TABLE.
+
+SELECT * FROM VEHICLE_TYPES;
+
+SELECT * FROM "ROAD_SAFETY_PROJECT"."PUBLIC"."VEHICLES_2015";
+--
+UPDATE VEHICLE_TYPES
+SET LABEL='Unknown Vehicle'
+where LABEL= 'Data missing or out of range';
+
+--OR,
+
+UPDATE VEHICLE_TYPES
+SET LABEL='Unknown Vehicle'
+where CODE= -1;
+--------------------------------------------------------
+
+--**UK ROAD SAFTETY 3RD QUESTION - SOLUTION***----------------------------
+
+    SELECT ROUND(AVG(AX.ACCIDENT_SEVERITY),2) AS AVERAGE_SEVERITY, VT.LABEL vehicle_type
+    FROM ACCIDENTS_2015 AX
+    JOIN VEHICLES_2015 VEH ON AX.accident_index = VEH.accident_index
+    JOIN VEHICLE_TYPES VT ON VEH.vehicle_type = VT.CODE
+    GROUP BY 2
+    ORDER BY 2;  
+
+--**UK ROAD SAFTETY 4TH QUESTION - SOLUTION***----------------------------
+
+ SELECT ROUND(AVG(AX.ACCIDENT_SEVERITY),2) AS AVERAGE_SEVERITY,COUNT(AX.ACCIDENT_INDEX) AS TOTAL_ACCIDENTS
+    FROM ACCIDENTS_2015 AX
+    JOIN VEHICLES_2015 VEH ON AX.accident_index = VEH.accident_index
+    JOIN VEHICLE_TYPES VT ON VEH.vehicle_type = VT.CODE
+    WHERE VT.LABEL  like '%otorcycle%';
+    
+--IF YOU WANT AVERAGE_SEVERITY AND TOTAL_ACCIDENTS BASED ON VARIOUS TYPE OF MOTORCYCLES THEN
+  --GROUP BY VT.LABEL
+  --ORDER BY 2; 
+ 
+
+ --*******************************END********************************************-
